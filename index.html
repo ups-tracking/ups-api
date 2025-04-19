@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UPS Shipping & Tracking</title>
+  <!-- Favicon for browser tab -->
+  <link rel="icon" type="image/png" href="https://res.cloudinary.com/drbiup2zg/image/upload/w_32,h_32/v1745030247/ups_yfdjww.png" />
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- React and Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.5/babel.min.js"></script>
+  <style>
+    @media screen and (width:600px) {
+      .h-flex {
+        display: flex;
+      }
+    }
+    .h-flex { display: none !important; }
+    .ups-nav { 
+      background-color: #F5F5F5; 
+      padding: 10px 0; 
+      position: sticky; 
+      top: 0; 
+      z-index: 1000; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .ups-nav a { margin-right: 15px; color: #000; text-decoration: none; }
+    .ups-nav a:hover { text-decoration: underline; }
+    .btn-ups { background-color: #FFC107; color: #000; border: none; }
+    .btn-ups:hover { background-color: #FFB300; }
+    .logo-img { height: 100px; }
+    .timeline { position: relative; padding-left: 30px; }
+    .timeline::before { content: ''; position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: #28a745; }
+    .timeline-item { position: relative; margin-bottom: 20px; }
+    .timeline-item::before { content: ''; position: absolute; left: -30px; top: 5px; width: 15px; height: 15px; background: #28a745; border-radius: 50%; }
+    .timeline-item.delivered::before { background: url('https://cdn-icons-png.flaticon.com/512/190/190411.png') no-repeat center; background-size: 15px; }
+    .proof-link { color: #007bff; cursor: pointer; text-decoration: underline; }
+    .proof-link:hover { color: #0056b3; }
+    .footer { background-color: #351C15; color: white; padding: 40px 0; }
+    .footer a { color: white; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    .footer h5 { color: white; margin-bottom: 15px; }
+    .footer .social-icons a { margin-right: 10px; }
+    .footer .social-icons img { width: 24px; height: 24px; }
+    .footer-bottom { border-top: 1px solid #555; padding-top: 20px; margin-top: 20px; }
+    .footer-bottom a { margin-right: 15px; }
+    .ask-ups-btn { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 50px; }
+    .ask-ups-btn:hover { background-color: #0056b3; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const App = () => {
+      const [trackingNumber, setTrackingNumber] = useState('');
+      const [trackingResult, setTrackingResult] = useState(null);
+      const [shipments, setShipments] = useState([]);
+      const [region, setRegion] = useState('United States');
+      const [shipmentData, setShipmentData] = useState({
+        senderName: '',
+        senderAddress: '',
+        receiverName: '',
+        receiverAddress: '',
+        packageDetails: '',
+        region: 'United States',
+        image: null
+      });
+      const [showProofImage, setShowProofImage] = useState(false);
+
+      // Simulated backend data with tracking history and images
+      const mockBackendData = {
+        "United States": [
+          { 
+            trackingNumber: "UPS123456", 
+            senderName: "Amanda", 
+            senderAddress: "11319 Leannon Pike Hama Governorate Syrian", 
+            receiverName: "Eric Sieling", 
+            receiverAddress: "1992 dunn acres dr Conway Sc", 
+            packageDetails: "Books", 
+            date: "04/15/2025", 
+            status: "Delivered", 
+            image: "https://res.cloudinary.com/drbiup2zg/image/upload/v1745028956/Screenshot_2025-04-19_at_03.14.06_rpcpnp.png",
+            history: [
+              { date: "05/02/2025 9:59 A.M.", location: "11319 Leannon Pike Hama Governorate Syrian", activity: "Delivered", details: "Proof of Delivery" },
+              { date: "19/03/2025 2:32 P.M.", location: "Continetal Boulevard, Charlotte, NC US", activity: "Delivered", details: "Proof of Delivery" },
+              { date: "20/04/2025 9:11 A.M.", location: "1992 dunn acres dr Conway S", activity: "Destination Scan", details: "" },
+            ]
+          }
+        ],
+        "Europe": [
+          { 
+            trackingNumber: "UPS789123", 
+            senderName: "Emma Wilson", 
+            senderAddress: "12 King St, London", 
+            receiverName: "Liam Davis", 
+            receiverAddress: "34 Queen St, Paris", 
+            packageDetails: "Clothes", 
+            date: "04/14/2025", 
+            status: "In Transit", 
+            image: "https://res.cloudinary.com/drbiup2zg/image/upload/v1745028956/Screenshot_2025-04-19_at_03.14.06_rpcpnp.png",
+            history: [
+              { date: "04/14/2025 3:48 P.M.", location: "London, UK", activity: "Departed from Facility", details: "" },
+              { date: "04/14/2025 1:13 P.M.", location: "London, UK", activity: "Arrived at Facility", details: "" }
+            ]
+          }
+        ],
+        "Asia": [
+          { 
+            trackingNumber: "UPS456789", 
+            senderName: "Sofia Chen", 
+            senderAddress: "56 Sakura St, Tokyo", 
+            receiverName: "Amit Patel", 
+            receiverAddress: "78 Lotus Rd, Mumbai", 
+            packageDetails: "Gadgets", 
+            date: "04/17/2025", 
+            status: "Processing", 
+            image: "https://res.cloudinary.com/drbiup2zg/image/upload/v1745028956/Screenshot_2025-04-19_at_03.14.06_rpcpnp.png",
+            history: [
+              { date: "04/17/2025 1:13 P.M.", location: "Tokyo, JP", activity: "Arrived at Facility", details: "" }
+            ]
+          }
+        ]
+      };
+
+      // Simulated API endpoint for tracking
+      const fetchTrackingData = (trackingNum) => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            let shipment = null;
+            for (const region in mockBackendData) {
+              shipment = mockBackendData[region].find(s => s.trackingNumber === trackingNum);
+              if (shipment) break;
+            }
+            resolve(shipment ? { status: shipment.status, details: shipment } : { status: 'Not Found', details: null });
+          }, 500);
+        });
+      };
+
+      // Simulated API endpoint for creating shipment
+      const createShipment = (shipment) => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const newTrackingNumber = `UPS${Math.floor(100000 + Math.random() * 900000)}`;
+            const newShipment = { 
+              ...shipment, 
+              trackingNumber: newTrackingNumber, 
+              date: new Date().toLocaleDateString(), 
+              status: "Processing",
+              history: [
+                { date: `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, location: shipment.senderAddress, activity: "Arrived at Facility", details: "" }
+              ]
+            };
+            resolve(newShipment);
+          }, 500);
+        });
+      };
+
+      const handleTrack = async () => {
+        if (trackingNumber) {
+          const result = await fetchTrackingData(trackingNumber);
+          setTrackingResult(result);
+        }
+      };
+
+      const handleShipmentSubmit = async (e) => {
+        e.preventDefault();
+        const newShipment = await createShipment(shipmentData);
+        const updatedShipments = [...shipments, newShipment];
+        setShipments(updatedShipments);
+        mockBackendData[newShipment.region] = mockBackendData[newShipment.region] || [];
+        mockBackendData[newShipment.region].push(newShipment);
+        alert(`Shipment created! Tracking Number: ${newShipment.trackingNumber}`);
+        setShipmentData({ senderName: '', senderAddress: '', receiverName: '', receiverAddress: '', packageDetails: '', region: 'United States', image: null });
+        document.getElementById('imageInput').value = null;
+      };
+
+      const handleShipmentChange = (e) => {
+        setShipmentData({ ...shipmentData, [e.target.name]: e.target.value });
+      };
+
+      const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setShipmentData({ ...shipmentData, image: event.target.result });
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+
+      const handleProofClick = (location) => {
+        if (location === "Continetal Boulevard, Charlotte, NC US") {
+          setShowProofImage(true);
+        }
+      };
+
+      return (
+        <div>
+          {/* Navigation with Sticky Header */}
+          <nav className="ups-nav">
+            <div className="container d-flex justify-content-between align-items-center">
+              <header className="text-start">
+                <img 
+                  src="https://res.cloudinary.com/drbiup2zg/image/upload/v1745030247/ups_yfdjww.png" 
+                  alt="UPS Logo" 
+                  className="logo-img"
+                />
+              </header>
+              <div className="">
+                <a href="#">Shipping</a>
+                <a href="#">Tracking</a>
+                <a href="#">Products & Services</a>
+                <a href="#">The UPS Store</a>
+              </div>
+              <button className="btn btn-ups">Log In</button>
+            </div>
+          </nav>
+
+          {/* Main Content */}
+          <div className="container my-4">
+            <div className="row">
+              {/* Tracking Section */}
+              <div className="col-md-8">
+                <div className="card p-4 mb-4">
+                  <h3>Track</h3>
+                  <p>Enter up to 25 tracking numbers, one per line.</p>
+                  <select 
+                    className="form-select mb-3" 
+                    value={region} 
+                    onChange={(e) => setRegion(e.target.value)}
+                  >
+                    <option value="United States">United States</option>
+                    <option value="Europe">Europe</option>
+                    <option value="Asia">Asia</option>
+                  </select>
+                  <textarea
+                    className="form-control mb-3"
+                    rows="3"
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    placeholder="Enter tracking number"
+                  ></textarea>
+                  <p>Need to Change a Delivery?</p>
+                  <p>You can access available options by tracking the package and then selecting "Change My Delivery".</p>
+                  <button className="btn btn-ups" onClick={handleTrack}>Track</button>
+
+                  {trackingResult && (
+                    <div className="mt-3">
+                      <h5>Tracking Result</h5>
+                      <p>Status: {trackingResult.status}</p>
+                      {trackingResult.details && (
+                        <div>
+                          <p>Sender: {trackingResult.details.senderName}</p>
+                          <p>Receiver: {trackingResult.details.receiverName}</p>
+                          <p>Date: {trackingResult.details.date}</p>
+                          {trackingResult.details.image && (
+                            <div>
+                              <h6>Package Image</h6>
+                              <img src={trackingResult.details.image} alt="Package" style={{ maxWidth: '150px' }} />
+                            </div>
+                          )}
+                          <h6>Tracking History</h6>
+                          <div className="timeline">
+                            {trackingResult.details.history.map((event, index) => (
+                              <div 
+                                key={index} 
+                                className={`timeline-item ${event.activity === 'Delivered' ? 'delivered' : ''}`}
+                              >
+                                <p><strong>{event.activity}</strong> - {event.date}</p>
+                                <p>{event.location}</p>
+                                <p>
+                                  {event.details === "Proof of Delivery" ? (
+                                    <span 
+                                      className="proof-link" 
+                                      onClick={() => handleProofClick(event.location)}
+                                    >
+                                      {event.details}
+                                    </span>
+                                  ) : (
+                                    event.details
+                                  )}
+                                </p>
+                                {showProofImage && event.location === "Continetal Boulevard, Charlotte, NC US" && (
+                                  <div>
+                                    <img 
+                                      src="https://res.cloudinary.com/drbiup2zg/image/upload/v1745089896/Screenshot_2025-04-19_at_20.09.35_qipafu.png" 
+                                      alt="Proof of Delivery" 
+                                      style={{ maxWidth: '200px' }} 
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Shipping Section */}
+                <div className="card p-4 d-none">
+                  <h3>Create a Shipment</h3>
+                  <div>
+                    <div className="mb-3">
+                      <label className="form-label">Sender Name</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="senderName"
+                        value={shipmentData.senderName}
+                        onChange={handleShipmentChange}
+                        required
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Sender Address</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="senderAddress"
+                        value={shipmentData.senderAddress}
+                        onChange={handleShipmentChange}
+                        required
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Receiver Name</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="receiverName"
+                        value={shipmentData.receiverName}
+                        onChange={handleShipmentChange}
+                        required
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Receiver Address</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="receiverAddress"
+                        value={shipmentData.receiverAddress}
+                        onChange={handleShipmentChange}
+                        required
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Package Details</label>
+                      <textarea
+                        className="form-control"
+                        name="packageDetails"
+                        value={shipmentData.packageDetails}
+                        onChange={handleShipmentChange}
+                        required
+                      ></textarea>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Region</label>
+                      <select 
+                        className="form-select" 
+                        name="region" 
+                        value={shipmentData.region} 
+                        onChange={handleShipmentChange}
+                      >
+                        <option value="United States">United States</option>
+                        <option value="Europe">Europe</option>
+                        <option value="Asia">Asia</option>
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Upload Package Image</label>
+                      <input
+                        type="file"
+                        className="form-control"
+                        id="imageInput"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </div>
+                    {shipmentData.image && (
+                      <div className="mb-3">
+                        <img src={shipmentData.image} alt="Preview" style={{ maxWidth: '150px' }} />
+                      </div>
+                    )}
+                    <button className="btn btn-ups" onClick={handleShipmentSubmit}>Create Shipment</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sidebar */}
+              <div className="col-md-4">
+                <div className="card p-3 mb-3">
+                  <p><a href="#">Track by Reference Number</a></p>
+                  <p><a href="#">Import Tracking Numbers</a></p>
+                  <p><a href="#">Other Tracking Services</a></p>
+                </div>
+                <div className="card p-3">
+                  <h5>Stay Safe - Avoid Fraud</h5>
+                  <p>Received a text, call, or email that seems suspicious? Don't respond to it.</p>
+                  <button className="btn btn-outline-primary">Tips to Avoid Fraud</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Recently Tracked */}
+            <div className="mt-4">
+              <h5>Recently Tracked</h5>
+              <p>Log in or Sign up to view your recently tracked shipments.</p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <footer className="footer">
+            <div className="container">
+              <div className="row">
+                <div className="col-md-3">
+                  <h5>THIS SITE</h5>
+                  <p><a href="#">Tracking</a></p>
+                  <p><a href="#">Shipping</a></p>
+                  <p><a href="#">Support</a></p>
+                  <p><a href="#">Recognize a UPS Employee</a></p>
+                  <p><a href="#">Communication Preferences</a></p>
+                </div>
+                <div className="col-md-3">
+                  <h5>UPS SITES</h5>
+                  <p><a href="#">About UPS</a></p>
+                  <p><a href="#">UPS Jobs</a></p>
+                  <p><a href="#">UPS Healthcare</a></p>
+                  <p><a href="#">UPS Supply Chain Solutions</a></p>
+                  <p><a href="#">The UPS Store</a></p>
+                  <p><a href="#">UPS Capital</a></p>
+                  <p><a href="#">UPS Developer Portal</a></p>
+                </div>
+                <div className="col-md-3">
+                  <h5>UPS COMPANIES</h5>
+                  <p><a href="#">Happy Returns</a></p>
+                  <p><a href="#">Roadie</a></p>
+                  <p><a href="#">Ware2Go Fulfillment</a></p>
+                  <p><a href="#">InsureShield Shipping Insurance</a></p>
+                  <p><a href="#">Parcel Pro</a></p>
+                  <p><a href="#">Delivery Solutions</a></p>
+                </div>
+                <div className="col-md-3">
+                  <h5>CONNECT WITH US</h5>
+                  <div className="social-icons">
+                    <a href="https://www.facebook.com/ups"><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" /></a>
+                    <a href="https://twitter.com/ups"><img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter" /></a>
+                    <a href="https://www.instagram.com/ups"><img src="https://cdn-icons-png.flaticon.com/512/733/733558.png" alt="Instagram" /></a>
+                    <a href="https://www.linkedin.com/company/ups"><img src="https://cdn-icons-png.flaticon.com/512/733/733561.png" alt="LinkedIn" /></a>
+                    <a href="https://www.youtube.com/ups"><img src="https://cdn-icons-png.flaticon.com/512/733/733646.png" alt="YouTube" /></a>
+                  </div>
+                  <button className="ask-ups-btn mt-3">Ask UPS</button>
+                </div>
+              </div>
+              <div className="footer-bottom text-center">
+                <a href="#">Global Home</a> | 
+                <a href="#">Protect Against Fraud</a> | 
+                <a href="#">Terms and Conditions</a> | 
+                <a href="#">Website Terms of Use</a> | 
+                <a href="#">Your California Privacy Rights</a> | 
+                <a href="#">Privacy Notice</a> | 
+                <a href="#">Cookie Settings</a> | 
+                <a href="#">Do Not Sell or Share My Personal Information</a>
+                <p className="mt-2">Copyright ©1994-2025 United Parcel Service of America, Inc. All rights reserved.</p>
+              </div>
+            </div>
+          </footer>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
