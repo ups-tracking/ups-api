@@ -1,0 +1,35 @@
+{
+  "name": "ups",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/braincell044/ups/issues"
+  },
+  "homepage": "https://github.com/braincell044/ups#readme",
+  "dependencies": {
+    "cloudinary": "^2.6.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-fileupload": "^1.5.1",
+    "mongoose": "^8.15.1",
+    "multer": "^2.0.1",
+    "streamifier": "^0.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
