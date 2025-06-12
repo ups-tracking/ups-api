@@ -9,21 +9,15 @@ import shipmentRoutes from './routes/shipment.js';
 const app = express();
 
 // Middleware
-const allowedOrigins = [
-  'https://ups-chi.vercel.app',
-  'http://localhost:3000',
-  'http://192.168.1.146:3000', // ✅ Your MacBook’s local IP
-];
+
+app.use(cors());
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed for this origin'));
-    }
-  }
+  origin: [ 'http://localhost:3000','https://ups-chi.vercel.app'],
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type'],
 }));
+
 
 app.use(express.json());
 
