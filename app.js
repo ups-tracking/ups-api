@@ -9,7 +9,9 @@ import shipmentRoutes from './routes/shipment.js';
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['https://ups-chi.vercel.app', 'http://localhost:3000'],
+}));
 app.use(express.json());
 
 // Routes
