@@ -1,15 +1,13 @@
-
-
+// shipmentRoutes.js
 import express from 'express';
 import multer from 'multer';
 import streamifier from 'streamifier';
-import cloudinary from '../utils/cloudinary.js'; // use shared config
+import cloudinary from '../utils/cloudinary.js';
 import Shipment from '../models/Shipment.js';
 
 const router = express.Router();
 const upload = multer();
 
-// Utility function
 function generateTrackingNumber() {
   const prefix = 'UPS';
   const randomPart = Math.floor(100000 + Math.random() * 900000);
@@ -62,6 +60,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 // PATCH: Update shipment status
 router.patch('/:id/status', async (req, res) => {
   try {
@@ -99,6 +98,8 @@ router.get('/track/:trackingNumber', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// GET all shipments
 router.get('/', async (req, res) => {
   try {
     const shipments = await Shipment.find();
@@ -107,4 +108,5 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 export default router;

@@ -1,20 +1,20 @@
 {
   "name": "ups",
   "version": "1.0.0",
-  "description": "",
+  "description": "UPS-like shipment tracker backend",
   "type": "module",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "NODE_ENV=production node app.js",
     "dev": "nodemon app.js"
   },
+  "keywords": ["express", "mongoose", "shipment", "tracking", "cloudinary", "backend"],
+  "author": "Your Name",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/braincell044/ups.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/braincell044/ups/issues"
   },

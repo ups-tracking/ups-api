@@ -2,43 +2,50 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-dotenv.config();
-
 import shipmentRoutes from './routes/shipment.js';
 
+dotenv.config();
 const app = express();
 
-// Middleware
-
-app.use(cors());
+// ✅ CORS SETUP
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://ups-chi.vercel.app',
+];
 
 app.use(cors({
-  origin: [ 'http://localhost:3000','https://ups-chi.vercel.app'],
-  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-
 
 app.use(express.json());
 
-// Routes
+// ✅ ROUTES
 app.use('/api/shipments', shipmentRoutes);
 
-// Health check
+// ✅ HEALTH CHECK
 app.get('/', (req, res) => {
   res.send('UPS Backend Running ✅');
 });
 
-// MongoDB connection
+// ✅ DB & SERVER
 const PORT = process.env.PORT || 5005;
-mongoose
-  .connect(process.env.MONGO_URI)
+
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    app.listen(PORT, () =>
+      console.log(`🚀 Server running on http://localhost:${PORT}`)
+    );
   })
   .catch((err) => {
     console.error('❌ DB connection error:', err);
   });
-
-export default app;
