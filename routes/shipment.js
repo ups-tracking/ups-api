@@ -1,4 +1,4 @@
-// shipmentRoutes.js
+// routes/shipments.js
 import express from 'express';
 import multer from 'multer';
 import streamifier from 'streamifier';
@@ -14,7 +14,7 @@ function generateTrackingNumber() {
   return `${prefix}-${randomPart}`;
 }
 
-// Admin: Create shipment with image
+// POST: Create a shipment with image
 router.post('/', upload.single('image'), async (req, res) => {
   try {
     const { sender, recipient, origin, destination } = req.body;
@@ -61,12 +61,11 @@ router.post('/', upload.single('image'), async (req, res) => {
   }
 });
 
-// PATCH: Update shipment status
+// PATCH: Update status
 router.patch('/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
     const allowedStatuses = ['pending', 'in transit', 'delivered', 'cancelled'];
-
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status value' });
     }
@@ -83,27 +82,27 @@ router.patch('/:id/status', async (req, res) => {
 
     res.status(200).json(updatedShipment);
   } catch (err) {
-    console.error('Error updating shipment status:', err.message);
+    console.error('Error updating status:', err.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// GET by tracking number
-router.get('/track/:trackingNumber', async (req, res) => {
+// GET: All shipments
+router.get('/', async (req, res) => {
   try {
-    const shipment = await Shipment.findOne({ trackingNumber: req.params.trackingNumber });
-    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
-    res.status(200).json(shipment);
+    const shipments = await Shipment.find();
+    res.status(200).json(shipments);
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// GET all shipments
-router.get('/', async (req, res) => {
+// GET: Shipment by tracking number
+router.get('/track/:trackingNumber', async (req, res) => {
   try {
-    const shipments = await Shipment.find();
-    res.status(200).json(shipments);
+    const shipment = await Shipment.findOne({ trackingNumber: req.params.trackingNumber });
+    if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
+    res.status(200).json(shipment);
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
