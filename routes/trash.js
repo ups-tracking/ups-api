@@ -12,66 +12,62 @@ function generateTrackingNumber() {
   const randomPart = Math.floor(100000 + Math.random() * 900000);
   return `${prefix}-${randomPart}`;
 }
-// POST: Create a shipment with optional image
+
+// POST: Create a shipment (image optional)
 router.post('/', upload.single('image'), async (req, res) => {
-  try {
-
-
-    const { sender, recipient, origin, destination } = req.body;
-
-    // Validate required text fields
-    if (!sender || !recipient || !origin || !destination) {
-      return res.status(400).json({ error: 'All fields are required' });
+    try {
+      const { sender, recipient, origin, destination } = req.body;
+  
+      // Check for required fields only (not image)
+      if (!sender || !recipient || !origin || !destination) {
+        return res.status(400).json({ error: 'All fields are required' });
+      }
+  
+      let imageUrl = null;
+  
+      // Upload image only if it exists
+      if (req.file) {
+        const uploadImage = () =>
+          new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+              { folder: 'shipments' },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            );
+            streamifier.createReadStream(req.file.buffer).pipe(stream);
+          });
+  
+        const result = await uploadImage();
+        imageUrl = result.secure_url;
+      }
+  
+      let trackingNumber;
+      let isUnique = false;
+      while (!isUnique) {
+        trackingNumber = generateTrackingNumber();
+        const exists = await Shipment.findOne({ trackingNumber });
+        if (!exists) isUnique = true;
+      }
+  
+      const shipment = new Shipment({
+        trackingNumber,
+        sender,
+        recipient,
+        origin,
+        destination,
+        ...(imageUrl && { image: imageUrl }), // only add image if it exists
+      });
+  
+      const saved = await shipment.save();
+      res.status(201).json(saved);
+    } catch (err) {
+      console.error('❌ Shipment creation error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
     }
-
-    let imageUrl = null;
-
-    // If image is provided, upload it to Cloudinary
-    if (req.file) {
-      const uploadImage = () =>
-        new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: 'shipments' },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          streamifier.createReadStream(req.file.buffer).pipe(stream);
-        });
-
-      const result = await uploadImage();
-      imageUrl = result.secure_url;
-    }
-
-    // Generate unique tracking number
-    let trackingNumber;
-    let isUnique = false;
-    while (!isUnique) {
-      trackingNumber = generateTrackingNumber();
-      const exists = await Shipment.findOne({ trackingNumber });
-      if (!exists) isUnique = true;
-    }
-
-    // Create new shipment
-    const shipment = new Shipment({
-      trackingNumber,
-      sender,
-      recipient,
-      origin,
-      destination,
-      ...(imageUrl && { image: imageUrl }), // only add image if it exists
-    });
-
-    const saved = await shipment.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    console.error('❌ Shipment creation error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-
+  });
+  
 // POST: Add image to existing shipment
 router.post('/:id/add-image', upload.single('image'), async (req, res) => {
   try {
